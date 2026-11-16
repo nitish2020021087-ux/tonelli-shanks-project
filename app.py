@@ -25,18 +25,16 @@ st.divider()
 # -------------------------------
 
 def euler_criterion(a, p):
-
     a %= p
 
     if a == 0:
         return 0
 
-    result = pow(a, (p-1)//2, p)
+    result = pow(a, (p - 1) // 2, p)
 
     if result == 1:
         return 1
-
-    elif result == p-1:
+    elif result == p - 1:
         return -1
 
 
@@ -45,7 +43,6 @@ def euler_criterion(a, p):
 # -------------------------------
 
 def tonelli_shanks(a, p):
-
     a %= p
 
     if p == 2:
@@ -66,16 +63,15 @@ def tonelli_shanks(a, p):
 
     z = 2
 
-    while pow(z, (p-1)//2, p) != p-1:
+    while pow(z, (p - 1) // 2, p) != p - 1:
         z += 1
 
     c = pow(z, q, p)
-    x = pow(a, (q+1)//2, p)
+    x = pow(a, (q + 1) // 2, p)
     t = pow(a, q, p)
     m = s
 
     while t != 1:
-
         i = 1
         temp = pow(t, 2, p)
 
@@ -83,10 +79,10 @@ def tonelli_shanks(a, p):
             temp = pow(temp, 2, p)
             i += 1
 
-        b = pow(c, 1 << (m-i-1), p)
+        b = pow(c, 1 << (m - i - 1), p)
 
-        x = (x*b) % p
-        t = (t*b*b) % p
+        x = (x * b) % p
+        t = (t * b * b) % p
         c = pow(b, 2, p)
         m = i
 
@@ -99,16 +95,18 @@ def tonelli_shanks(a, p):
 
 st.sidebar.title("⚙️ Settings")
 
+# Initialize input values
+if "p_text" not in st.session_state:
+    st.session_state.p_text = "41"
+
+if "a_text" not in st.session_state:
+    st.session_state.a_text = "18"
+
+# Generate a 512-bit prime
 if st.sidebar.button("Generate 512-bit Prime"):
-    st.session_state.p = int(
+    st.session_state.p_text = str(
         randprime(2**511, 2**512)
     )
-
-if "p" not in st.session_state:
-    st.session_state.p = 41
-
-if "a" not in st.session_state:
-    st.session_state.a = 18
 
 st.sidebar.info(
     "Use a prime modulus p and enter the value a."
@@ -124,22 +122,20 @@ st.header("1. Enter Input Values")
 col1, col2 = st.columns(2)
 
 with col1:
-    p = st.number_input(
+    p_text = st.text_input(
         "Prime Number (p)",
-        min_value=2,
-        value=int(st.session_state.p),
-        step=1
+        key="p_text"
     )
 
 with col2:
-    a = st.number_input(
+    a_text = st.text_input(
         "Number (a)",
-        min_value=0,
-        value=int(st.session_state.a),
-        step=1
+        key="a_text"
     )
 
-st.caption("For a 512-bit prime, use the Generate 512-bit Prime button.")
+st.caption(
+    "For a 512-bit prime, use the Generate 512-bit Prime button."
+)
 
 
 # -------------------------------
@@ -148,98 +144,105 @@ st.caption("For a 512-bit prime, use the Generate 512-bit Prime button.")
 
 if st.button("🚀 Calculate Square Root", type="primary"):
 
-    p = int(p)
-    a = int(a)
+    try:
+        p = int(p_text.strip())
+        a = int(a_text.strip())
 
-    if not isprime(p):
-        st.error("p must be a prime number.")
+    except ValueError:
+        st.error("Please enter valid integer values for p and a.")
 
     else:
 
-        a = a % p
+        if p < 2:
+            st.error("p must be greater than or equal to 2.")
 
-        st.divider()
-        st.header("2. Euler's Criterion")
-
-        result = euler_criterion(a, p)
-
-        if result == 1:
-            st.success("Quadratic Residue (QR)")
-
-        elif result == -1:
-            st.warning("Quadratic Non-Residue (QNR)")
-
-        else:
-            st.info("Zero modulo p")
-
-        st.write(
-            f"Euler result: {result}"
-        )
-
-        st.divider()
-        st.header("3. Tonelli–Shanks Algorithm")
-
-        if result == -1:
-
-            st.error(
-                "No modular square root exists."
-            )
+        elif not isprime(p):
+            st.error("p must be a prime number.")
 
         else:
 
-            root1 = tonelli_shanks(a, p)
-            root2 = (-root1) % p
+            a = a % p
 
-            st.success("Square roots calculated!")
+            st.divider()
+            st.header("2. Euler's Criterion")
 
-            c1, c2 = st.columns(2)
+            result = euler_criterion(a, p)
 
-            with c1:
-                st.metric(
-                    "First Root",
-                    str(root1)
+            if result == 1:
+                st.success("Quadratic Residue (QR)")
+
+            elif result == -1:
+                st.warning("Quadratic Non-Residue (QNR)")
+
+            else:
+                st.info("Zero modulo p")
+
+            st.write(f"Euler result: {result}")
+
+            st.divider()
+            st.header("3. Tonelli–Shanks Algorithm")
+
+            if result == -1:
+
+                st.error(
+                    "No modular square root exists."
                 )
 
-            with c2:
-                st.metric(
-                    "Second Root",
-                    str(root2)
+            else:
+
+                root1 = tonelli_shanks(a, p)
+                root2 = (-root1) % p
+
+                st.success("Square roots calculated!")
+
+                c1, c2 = st.columns(2)
+
+                with c1:
+                    st.metric(
+                        "First Root",
+                        str(root1)
+                    )
+
+                with c2:
+                    st.metric(
+                        "Second Root",
+                        str(root2)
+                    )
+
+                st.divider()
+                st.header("4. Root Verification")
+
+                v1 = pow(root1, 2, p) == a
+                v2 = pow(root2, 2, p) == a
+
+                st.write(
+                    "First Root Verification:",
+                    "✅ PASS" if v1 else "❌ FAIL"
+                )
+
+                st.write(
+                    "Second Root Verification:",
+                    "✅ PASS" if v2 else "❌ FAIL"
                 )
 
             st.divider()
-            st.header("4. Root Verification")
+            st.header("5. Factorization of p-1")
 
-            v1 = pow(root1, 2, p) == a
-            v2 = pow(root2, 2, p) == a
+            q = p - 1
+            s = 0
 
-            st.write(
-                "First Root Verification:",
-                "✅ PASS" if v1 else "❌ FAIL"
+            while q % 2 == 0:
+                q //= 2
+                s += 1
+
+            st.latex(
+                rf"p-1 = 2^{{{s}}} \times {q}"
             )
 
-            st.write(
-                "Second Root Verification:",
-                "✅ PASS" if v2 else "❌ FAIL"
-            )
+            col1, col2 = st.columns(2)
 
-        st.divider()
-        st.header("5. Factorization of p-1")
-
-        q = p-1
-        s = 0
-
-        while q % 2 == 0:
-            q //= 2
-            s += 1
-
-        st.latex(
-            rf"p-1 = 2^{{{s}}} \times {q}"
-        )
-
-        col1, col2 = st.columns(2)
-
-        col1.metric("Value of s", s)
-        col2.metric("Odd value q", str(q))
+            col1.metric("Value of s", s)
+            col2.metric("Odd value q", str(q))
 
 
 # -------------------------------
@@ -251,57 +254,73 @@ st.header("6. Additional QR and QNR Testing")
 
 if st.button("Generate Test Cases"):
 
-    p = int(p)
+    try:
+        p_test = int(p_text.strip())
 
-    if not isprime(p):
-        st.error("Please enter a prime p.")
+    except ValueError:
+        st.error("Please enter a valid prime p.")
 
     else:
 
-        residues = []
-        non_residues = []
-
-        while len(residues) < 2:
-            r = secrets.randbelow(p-1) + 1
-            a1 = pow(r, 2, p)
-
-            if a1 not in residues:
-                residues.append(a1)
-
-        while len(non_residues) < 2:
-            a1 = secrets.randbelow(p-1) + 1
-
-            if (
-                euler_criterion(a1, p) == -1
-                and a1 not in non_residues
-            ):
-                non_residues.append(a1)
-
-        st.subheader("Quadratic Residues")
-
-        for a1 in residues:
-            x = tonelli_shanks(a1, p)
-            y = (-x) % p
-
-            st.write("Residue:", a1)
-            st.write("Roots:", x, "and", y)
-            st.write(
-                "Verified:",
-                pow(x, 2, p) == a1 and
-                pow(y, 2, p) == a1
+        if p_test < 5:
+            st.warning(
+                "Please use a prime p greater than or equal to 5 "
+                "to generate two distinct QR and QNR test cases."
             )
-            st.divider()
 
-        st.subheader("Quadratic Non-Residues")
+        elif not isprime(p_test):
+            st.error("Please enter a prime p.")
 
-        for a1 in non_residues:
-            st.write("Non-Residue:", a1)
-            st.write(
-                "Euler Result:",
-                euler_criterion(a1, p)
-            )
-            st.write("Square root does not exist.")
-            st.divider()
+        else:
+
+            residues = set()
+            non_residues = set()
+
+            # Generate two distinct quadratic residues
+            while len(residues) < 2:
+                r = secrets.randbelow(p_test - 1) + 1
+                a1 = pow(r, 2, p_test)
+                residues.add(a1)
+
+            # Generate two distinct quadratic non-residues
+            while len(non_residues) < 2:
+                a1 = secrets.randbelow(p_test - 1) + 1
+
+                if euler_criterion(a1, p_test) == -1:
+                    non_residues.add(a1)
+
+            st.subheader("Quadratic Residues")
+
+            for a1 in sorted(residues):
+
+                x = tonelli_shanks(a1, p_test)
+                y = (-x) % p_test
+
+                st.write("Residue:", a1)
+                st.write("Roots:", x, "and", y)
+
+                st.write(
+                    "Verified:",
+                    pow(x, 2, p_test) == a1
+                    and pow(y, 2, p_test) == a1
+                )
+
+                st.divider()
+
+            st.subheader("Quadratic Non-Residues")
+
+            for a1 in sorted(non_residues):
+
+                st.write("Non-Residue:", a1)
+
+                st.write(
+                    "Euler Result:",
+                    euler_criterion(a1, p_test)
+                )
+
+                st.write("Square root does not exist.")
+
+                st.divider()
 
 
 # -------------------------------
